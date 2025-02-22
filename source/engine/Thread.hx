@@ -5,12 +5,10 @@ import sys.thread.Lock;
 
 class Thread
 {
-    private var thread:sys.thread.Thread;
-    public var lock:Lock;
+    public var thread:sys.thread.Thread;
 
     public function new(func:Void->Void)
     {
-        lock = new Lock();
         thread = sys.thread.Thread.create(func);
     }
 }

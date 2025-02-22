@@ -39,7 +39,8 @@
 	<set name="BUILD_DIR" value="export/unknown" />
 
 	<source path="source" />
-	<assets path="assets" if="client"/>
+
+	<assets path="assets" embed="true" if="client"/>
 
 	<app path="export/client/release" if="release"/>
 	<app path="export/client/debug" if="debug"/>
