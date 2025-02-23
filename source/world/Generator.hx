@@ -1,7 +1,7 @@
 package world;
 
 import world.Save.ChunkData;
-import flixel.addons.util.FlxSimplex;
+import noisehx.Perlin;
 
 class Generator
 {
@@ -19,8 +19,10 @@ class Generator
 
     public var seed:Int = 0;
 
-    final chunk_size:Int = 8;
-    final sea_level:Float = -0.75;
+    public static final chunk_size:Int = 8;
+    public static final tile_size:Int = 16;
+
+    final sea_level:Float = -0.5;
 
     /**
      * Generate a chunk for the following coordinates
@@ -30,6 +32,8 @@ class Generator
      */
     public function generateChunk(cX:Int, cY:Int) 
     {
+        var noise = new Perlin(seed);
+
         var chunk:ChunkData = {
             pos: [cX, cY],
             biome: null,
@@ -38,21 +42,33 @@ class Generator
 
         for (x in 0...chunk_size) {
             for (y in 0...chunk_size) {
-                // Seems to only be generating grass, look into this later. I really need to learn how perlin noise works.
-                var world:Float = FlxSimplex.simplexTiles(x + (cX * chunk_size), y + (cY * chunk_size), 1, 1, seed, 0.25, 2, 4);
-                var biome:Float = FlxSimplex.simplexTiles(x + (cX * chunk_size), y + (cY * chunk_size), 1, 1, seed, 0.5, 1.5, 2);
-                var foliage:Float = FlxSimplex.simplexTiles(x + (cX * chunk_size), y + (cY * chunk_size), 1, 1, seed, 0.1, 1, 1);
+                var world:Float = Math.max(-1, Math.min(1, noise.noise2d((x + (cX * chunk_size)) / tile_size, (y + (cY * chunk_size)) / tile_size, 2, 2)));
+                var biome:Float = Math.max(-1, Math.min(1, noise.noise2d((x + (cX * chunk_size)) / (chunk_size * tile_size), (y + (cY * chunk_size)) / (chunk_size * tile_size), 4, 4)));           
 
-                chunk.biome = pickBiome(biome);
+                if (world > (sea_level + 0.5)) {
+                    var sectionBiome = pickBiome(biome);
 
-                if (world > (sea_level + 0.05)) {
-                    chunk.tiles.push({
-                        pos: [x, y],
-                        type: 'grass'
-                    });
+                    // Ground
+                    switch (sectionBiome) {
+                        default:
+                            chunk.tiles.push({
+                                pos: [x, y],
+                                type: 'grass'
+                            });
+                        case 'tundra':
+                            chunk.tiles.push({
+                                pos: [x, y],
+                                type: 'snow'
+                            });
+                        case 'desert':
+                            chunk.tiles.push({
+                                pos: [x, y],
+                                type: 'sand'
+                            });
+                    }
 
                     // Foliage
-                    switch (pickBiome(biome)) {
+                    switch (sectionBiome) {
                         case 'tundra':
                             // TUNDRA
                         case 'plains':
@@ -64,8 +80,10 @@ class Generator
                         case 'desert':
                             // DESERT
                     }
+
+                    chunk.biome = sectionBiome; // Last Instance chooses the entire chunk's biome.
                 }
-                else if (world <= (sea_level)){ // Ocean
+                else if (world <= sea_level){ // Ocean
                     chunk.tiles.push({
                         pos: [x, y],
                         type: 'water'

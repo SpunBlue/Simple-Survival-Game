@@ -9,7 +9,9 @@ Make sure to read the [license](LICENSE.md) before continuing on.
 After Downloading the Source Code, you must install [Haxe](haxe.org) as well as [HaxeFlixel](haxeflixel.com). Follow the HaxeFlixel guide to set it up.
 
 ### Libaries
-At the moment, the game does not require any libraries.
+```
+haxelib git noisehx https://github.com/madhoe/noisehx.git
+```
 
 ### Build
 [Compiling Examples](Compiling.md)
