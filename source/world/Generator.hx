@@ -38,9 +38,10 @@ class Generator
 
         for (x in 0...chunk_size) {
             for (y in 0...chunk_size) {
-                var world:Float = FlxSimplex.simplexTiles(x + (cX * chunk_size), y + (cY * chunk_size), 1, 1, seed, 0.75, 2, 4);
+                // Seems to only be generating grass, look into this later. I really need to learn how perlin noise works.
+                var world:Float = FlxSimplex.simplexTiles(x + (cX * chunk_size), y + (cY * chunk_size), 1, 1, seed, 0.25, 2, 4);
                 var biome:Float = FlxSimplex.simplexTiles(x + (cX * chunk_size), y + (cY * chunk_size), 1, 1, seed, 0.5, 1.5, 2);
-                var foliage:Float = FlxSimplex.simplexTiles(x + (cX * chunk_size), y + (cY * chunk_size), 1, 1, seed, 0.25, 1, 1);
+                var foliage:Float = FlxSimplex.simplexTiles(x + (cX * chunk_size), y + (cY * chunk_size), 1, 1, seed, 0.1, 1, 1);
 
                 chunk.biome = pickBiome(biome);
 

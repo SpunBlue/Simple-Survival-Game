@@ -1,5 +1,7 @@
 package engine;
 
+import flixel.FlxG;
+import world.Generator;
 import world.Save.ChunkData;
 import world.Save.WorldInf;
 import flixel.math.FlxMath;
@@ -29,6 +31,12 @@ class GameManager
     public var properties:GameProperties;
     public var world:WorldInf;
 
+    private var worldGen:Generator;
+
+    #if debug
+    private var totalTicks:Int = 0;
+    #end
+
     /**
      * Create a new GameManager
      * @param world Expects the save information (seed, entities, etc).
@@ -36,10 +44,13 @@ class GameManager
     public function new(world:WorldInf, ?properties:GameProperties) {
         this.world = world;
 
+        worldGen = new Generator();
+        worldGen.seed = world.data.seed;
+
         if (properties == null)
             this.properties = { tickRate: 10, maxSize: FlxMath.MAX_VALUE_INT };
 
-        tickMgr = new FlxTimer().start(properties.tickRate / 1000, ( timer ) -> {
+        tickMgr = new FlxTimer().start(this.properties.tickRate / 1000, ( timer ) -> {
             #if (target.threaded)
             if (!waitingOnTickThread) {
                 if (ticksToCatchUpBy > 0 && ticksToCatchUpBy < 50) {
@@ -68,6 +79,12 @@ class GameManager
             #else
             update();
             #end
+
+            #if debug
+            ++totalTicks;
+
+            FlxG.watch.addQuick("TICKS", totalTicks);
+            #end
         }, 0);
     }
 
@@ -92,7 +109,7 @@ class GameManager
 
     private function checkChunks() {
         // THREAD LATER!!!
-        var safeChunks:Array<ChunkData> = [];
+        /*var safeChunks:Array<ChunkData> = [];
         for (chunk in loadedChunks) {
             for (loader in chunkLoaders) {
                 if (chunk.pos == loader.curChunk) {
@@ -100,9 +117,11 @@ class GameManager
                 }
             }
 
-            if (!safeChunks.contains(chunk))
+            if (!safeChunks.contains(chunk)) {
                 loadedChunks.remove(chunk.pos);
-        }
+                trace('Removed Chunks at position ${chunk.pos}');
+            }
+        }*/
 
         for (loader in chunkLoaders) {
             if (loadedChunks.exists(loader.curChunk)) {
@@ -129,7 +148,9 @@ class GameManager
     }
 
     private function loadChunk(chunkPos:Array<Int>) {
-        // Load the chunk
+        // Temporary!
+        var chunk = worldGen.generateChunk(chunkPos[0], chunkPos[1]);
+        loadedChunks.set(chunkPos, chunk);
     }
 
     // Messanger - Send packets to the server to be sent to players, or directly to the client if in singleplayer. Or manipulate the GameManager.
@@ -138,6 +159,11 @@ class GameManager
         chunkLoaders.push(loader);
     }
 
+    @:deprecated
+    /**
+     * Remove a chunk loader from the list
+     * @param loader 
+     */
     public function removeChunkLoader(loader:ChunkLoader) {
         deadChunkLoaders.push(loader);
     }
@@ -162,11 +188,11 @@ class GameManager
         #end
     }
 
-    public function retrieveChunk(chunkPos:Array<Int>):ChunkData {
+    public function retrieveChunk(loader:ChunkLoader):ChunkData {
         var chunkToReturn:ChunkData = null;
 
         for (chunk in loadedChunks) {
-            if (chunk.pos == chunkPos) {
+            if (chunk.pos[0] == loader.curChunk[0] && chunk.pos[1] == loader.curChunk[1]) {
                 chunkToReturn = chunk;
                 break;
             }
@@ -183,5 +209,10 @@ typedef GameProperties = {
 
 typedef ChunkLoader = {
     var curChunk:Array<Int>; // X, Y
-    var ?parent:Dynamic; // Either null or a player/entity.
+    var parent:EntityReference;
+}
+
+typedef EntityReference = {
+    var type:String;
+    var id:Int;
 }
